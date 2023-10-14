@@ -1,0 +1,4 @@
+0  BEGIN PGM test MM 
+1  BLK FORM 0.1 Z  X-20  Y-20  Z-20
+2  BLK FORM 0.2  X+20  Y+20  Z+0
+3  END PGM test MM 
