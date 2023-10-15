@@ -5,6 +5,7 @@ from plyer import notification
 import pyLSV2
 import os
 import argparse
+import logging
 
 dest_path =  "TNC:/EM/"
 path = "test/"  # Remplacez ceci par le chemin du dossier que vous souhaitez surveiller.
@@ -57,7 +58,7 @@ class MyHandler(FileSystemEventHandler):
         if not con.file_info(emplacement) == None:
             status = con.delete_file(emplacement)
             title = "Created"
-            message = f'File {event.src_path} has been created.'
+            message = f'File {event.src_path} has been deleted.'
             notification.notify(
                 title= title,
                 message= message + f' {status} '  ,
@@ -68,12 +69,31 @@ class MyHandler(FileSystemEventHandler):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfert de fichier Automatic pour Heidenhain")
 
+    parser.add_argument(
+        "-d",
+        "--debug",
+        help="Print lots of debugging statements",
+        action="store_const",
+        dest="loglevel",
+        const=logging.DEBUG,
+        default=logging.WARNING,
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Be verbose",
+        action="store_const",
+        dest="loglevel",
+        const=logging.INFO,
+    )
     parser.add_argument("--address", help="ip or hostname of control", type=str, default="localhost")
     
     parser.add_argument("--new", help="send on new file", type=bool, default=True)
     parser.add_argument("--delete", help="remove on delete file", type=bool, default=True)
     args = parser.parse_args()
-
+    
+    logging.basicConfig(level=args.loglevel)
+    
     host_machine = args.address
 
     event_handler = MyHandler()
@@ -85,7 +105,8 @@ if __name__ == "__main__":
         con = pyLSV2.LSV2(
         hostname=host_machine, 
         port=19000, 
-        timeout=30
+        timeout=30,
+        safe_mode=False
         
         )
     
