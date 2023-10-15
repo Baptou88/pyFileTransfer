@@ -11,25 +11,30 @@ path = "test/"  # Remplacez ceci par le chemin du dossier que vous souhaitez sur
 
 
 class MyHandler(FileSystemEventHandler):
+    
     def on_modified(self, event):
-        print(event.event_type)
-        print(event.is_synthetic)
+       
         if event.is_directory:
             return
-        # print(f'File {event.src_path} has been modified.')
-        # title = "Modified"
-        # message = f'File {event.src_path} has been modified.'
-        # notification.notify(
-        #     title= title,
-        #     message= message,
-        #     app_name= "zer",
-        #     timeout=5
-        # )
+        
+        print(f'File {event.src_path} has been modified.')
+        success = con.send_file(local_path=os.path.abspath(event.src_path), remote_path=dest_path, override_file=True,binary_mode=False)
+        
+        title = "Modified"
+        message = f'File {event.src_path} has been modified. '+ f' {success} '
+        notification.notify(
+            title= title,
+            message= message,
+            app_name= "Python",
+            timeout=5
+        )
 
     def on_created(self, event):
         if event.is_directory:
             return
-        print(f'File {event.src_path} has been created.')
+        if args.new == False:
+            return
+
         success = con.send_file(local_path=os.path.abspath(event.src_path), remote_path=dest_path, override_file=True,binary_mode=False)
 
         title = "Created"
@@ -37,31 +42,40 @@ class MyHandler(FileSystemEventHandler):
         notification.notify(
             title= title,
             message= message + f' {success} '  ,
-            app_name= "zer",
+            app_name= "Python",
             timeout=5
         )
 
     def on_deleted(self, event):
         if event.is_directory:
             return
-        print("deleted")
+        if args.delete == False:
+            return
         nom_du_fichier = os.path.basename(event.src_path)
-        print(f'Fichier à supprimer: {nom_du_fichier}')
         emplacement = f'{dest_path}{nom_du_fichier}'
-        print(f'Fichier à supprimer: {emplacement}')
+
         if not con.file_info(emplacement) == None:
             status = con.delete_file(emplacement)
-            print(f'supppression {status}')
+            title = "Created"
+            message = f'File {event.src_path} has been created.'
+            notification.notify(
+                title= title,
+                message= message + f' {status} '  ,
+                app_name= "Python",
+                timeout=5
+            )
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfert de fichier Automatic pour Heidenhain")
 
-    # parser.add_argument("address", nargs="?", default="192.168.56.101", type=str)
-
     parser.add_argument("--address", help="ip or hostname of control", type=str, default="localhost")
+    
+    parser.add_argument("--new", help="send on new file", type=bool, default=True)
+    parser.add_argument("--delete", help="remove on delete file", type=bool, default=True)
     args = parser.parse_args()
-    print(args.address)
+
     host_machine = args.address
+
     event_handler = MyHandler()
     observer = Observer()
     observer.schedule(event_handler, path, recursive=False)
@@ -81,6 +95,8 @@ if __name__ == "__main__":
         else:
             print("login error ")
 
+        print(con.versions.control)
+        print(con.versions.nc_sw)
 
         while True:
             
